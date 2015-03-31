@@ -6,7 +6,7 @@ Linux::Proc::Net::Read reads /proc/net/{netstat,snmp}, and construct perl data s
 SYNOPSIS
 ========
 
-` perl
+``` perl
   my $reader = Linux::Proc::Net::Read->get_alias;
   my( $stats_ref, $index_ref ) = $reader->parse_lines( $reader->read_file( "/proc/net/snmp" ) );
   
