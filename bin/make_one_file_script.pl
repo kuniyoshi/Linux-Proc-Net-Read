@@ -25,7 +25,9 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-our $interval ||= 2;
+our $interval  ||= 2;
+our $iteration ||= 10;
+our $in        ||= "/proc/net/netstat";
 our $verbose;
 
 $Data::Dumper::Terse    = 1;
@@ -39,14 +41,30 @@ package main;
 my $reader = Linux::Proc::Net::Read->get_alias;
 
 my @field_specs = qw(
-
+    -IpExt
+    -TcpExt
+    +TcpExt.DelayedACKLocked
+    +TcpExt.DelayedACKLost
+    +TcpExt.TCPFastRetrans
+    +TcpExt.TCPForwardRetrans
+    +TcpExt.TCPFullUndo
+    +TcpExt.TCPLoss
+    +TcpExt.TCPLossFailures
+    +TcpExt.TCPLossUndo
+    +TcpExt.TCPLostRetransmit
+    +TcpExt.TCPPartialUndo
+    +TcpExt.TCPSackFailures
+    +TcpExt.TCPSackRecoveryFail
+    +TcpExt.TCPSlowStartRetrans
 );
 
 $|++;
 
-while ( 1 ) {
+my $count;
+
+while ( $count++ < $iteration ) {
     my $measured_at = time;
-    my( $stats_ref, $index_ref ) = $reader->parse_lines( $reader->read_file( ) );
+    my( $stats_ref, $index_ref ) = $reader->parse_lines( $reader->read_file( $in ) );
 
     if ( $verbose ) {
         my %stat = $reader->construct_stat( $stats_ref, $index_ref );
