@@ -1,20 +1,23 @@
 use strict;
 use warnings;
 package Linux::Proc::Net::Read;
-use Readonly;
-
-Readonly my $PROC_FILENAME => "/proc/net/snmp";
 
 our $VERSION = "0.01";
 
 sub get_alias { shift }
 
 sub read_file {
-    open my $FH, "<", $PROC_FILENAME
-        or die "Could not open a file[$PROC_FILENAME] for read: $!";
+    shift
+        if $_[0] eq __PACKAGE__;
+
+    my $filename = shift;
+
+    open my $FH, "<", $filename
+        or die "Could not open a file[$filename] for read: $!";
     chomp( my @lines = <$FH> );
     close $FH
-        or die "Could not close a file[$PROC_FILENAME]: $!";
+        or die "Could not close a file[$filename]: $!";
+
     return @lines;
 }
 
@@ -85,21 +88,13 @@ sub get_fields {
     return @fields;
 }
 
-sub __clone_array { # only 2 depth.
+sub __clone_array { # only 2 depth.  i do not want to increase dependency modules.
     my $array_ref = shift;
     my @array = @{ $array_ref };
     $_ = [ @{ $_ } ]
         for @array;
     return @array;
 }
-
-# sub __clone_hash { # only 2 depth (id -> heading) clone.  i do not want to increase module dependency.
-#     my $hash_ref = shift;
-#     my %hash = %{ $hash_ref };
-#     $hash{ $_ } = { %{ $hash{ $_ } } }
-#         for keys %hash;
-#     return %hash;
-# }
 
 sub filt_stat {
     shift
@@ -165,18 +160,47 @@ sub extract_fields {
 __END__
 =pod
 
-=encoding utf-8
+=encoding utf8
 
 =head1 NAME
 
-Linux::Proc::Net::Read reads /proc/net/snmp, and construct perl data
+Linux::Proc::Net::Read reads /proc/net/{netstat,snmp}, and construct perl data structrue
 
 =head1 SYNOPSIS
 
+  my $reader = Linux::Proc::Net::Read->get_alias;
+  my( $stats_ref, $index_ref ) = $reader->parse_lines( $reader->read_file( "/proc/net/snmp" ) );
 
+  my @fields = $reader->extract_fields(
+      [ qw( -Ip -Icmp -IcmpMsg -Tcp -Udp -UdpLite +Tcp.InSegs +Tcp.OutSegs ) ],
+      $stats_ref,
+      $index_ref,
+  );
 
+  print join( "\t", @fields ), "\n";
+
+=head1 DESCRIPTION
+
+Reads `/proc/net/snmp`, or `/proc/net/netstat`.
+
+These files are formatted like below:
+
+  {Id.1}: {SubId.1} {SubId.2} {SubId.3} ...
+  {Id.1}: {Counter for SubId.1} {Counter for SubId.2} {Counter for SubId.3} ...
+  {Id.2}: {SubId.1} {SubId.2} {SubId.3} ...
+  {Id.2}: {Counter for SubId.1} {Counter for SubId.2} {Counter for SubId.3} ...
+  ...
+
+The format is not easy to extract.  To extract the counter, this module parses
+these lines, nad construct perl data.  After the data is perl, extraction is
+easy.
+
+The order of ID is important than code readability.  Thus this module generates
+Array rather than Hash.  When the data is Array, it requires index data.
 
 =head1 EXAMPLE DATA
+
+  /proc/net/snmp
 
   Ip: Forwarding DefaultTTL InReceives InHdrErrors InAddrErrors ForwDatagrams InUnknownProtos InDiscards InDelivers OutRequests OutDiscards OutNoRoutes ReasmTimeout ReasmReqds ReasmOKs ReasmFails FragOKs FragFails FragCreates
   Ip: 1 64 143326089 22090 0 36 0 0 137489637 85398346 28 0 2 1272 618 2 0 0 0
@@ -190,3 +214,10 @@ Linux::Proc::Net::Read reads /proc/net/snmp, and construct perl data
   Udp: 2006714 211 211 3277843 0 0 0
   UdpLite: InDatagrams NoPorts InErrors OutDatagrams RcvbufErrors SndbufErrors InCsumErrors
   UdpLite: 0 0 0 0 0 0 0
+
+  /proc/net/netstat
+
+  TcpExt: SyncookiesSent SyncookiesRecv SyncookiesFailed EmbryonicRsts PruneCalled RcvPruned OfoPruned OutOfWindowIcmps LockDroppedIcmps ArpFilter TW TWRecycled TWKilled PAWSPassive PAWSActive PAWSEstab DelayedACKs DelayedACKLocked DelayedACKLost ListenOverflows ListenDrops TCPPrequeued TCPDirectCopyFromBacklog TCPDirectCopyFromPrequeue TCPPrequeueDropped TCPHPHits TCPHPHitsToUser TCPPureAcks TCPHPAcks TCPRenoRecovery TCPSackRecovery TCPSACKReneging TCPFACKReorder TCPSACKReorder TCPRenoReorder TCPTSReorder TCPFullUndo TCPPartialUndo TCPDSACKUndo TCPLossUndo TCPLostRetransmit TCPRenoFailures TCPSackFailures TCPLossFailures TCPFastRetrans TCPForwardRetrans TCPSlowStartRetrans TCPTimeouts TCPLossProbes TCPLossProbeRecovery TCPRenoRecoveryFail TCPSackRecoveryFail TCPSchedulerFailed TCPRcvCollapsed TCPDSACKOldSent TCPDSACKOfoSent TCPDSACKRecv TCPDSACKOfoRecv TCPAbortOnData TCPAbortOnClose TCPAbortOnMemory TCPAbortOnTimeout TCPAbortOnLinger TCPAbortFailed TCPMemoryPressures TCPSACKDiscard TCPDSACKIgnoredOld TCPDSACKIgnoredNoUndo TCPSpuriousRTOs TCPMD5NotFound TCPMD5Unexpected TCPSackShifted TCPSackMerged TCPSackShiftFallback TCPBacklogDrop TCPMinTTLDrop TCPDeferAcceptDrop IPReversePathFilter TCPTimeWaitOverflow TCPReqQFullDoCookies TCPReqQFullDrop TCPRetransFail TCPRcvCoalesce TCPOFOQueue TCPOFODrop TCPOFOMerge TCPChallengeACK TCPSYNChallenge TCPFastOpenActive TCPFastOpenPassive TCPFastOpenPassiveFail TCPFastOpenListenOverflow TCPFastOpenCookieReqd TCPSpuriousRtxHostQueues BusyPollRxPackets
+  TcpExt: 0 0 7 10 1726327 0 0 0 0 0 126935 0 0 0 0 765 1213615 3202 9401 0 0 268959 119172 134863980 66 74775403 98789 8399260 567526 0 52 0 0 0 0 0 0 0 4 21757 0 0 10 116 282 9 0 104931 19813 19009 0 0 0 8079643 8026 6 3017 0 143 101 0 333 0 0 0 0 0 2632 19 0 0 667 427 325 1180 0 1373 6 0 0 0 0 96725165 232199 0 7 1579 1572 0 0 0 0 0 3 0
+  IpExt: InNoRoutes InTruncatedPkts InMcastPkts OutMcastPkts InBcastPkts OutBcastPkts InOctets OutOctets InMcastOctets OutMcastOctets InBcastOctets OutBcastOctets InCsumErrors
+  IpExt: 8 0 1373448 67 2933402 0 172057411322 5677157400 205756672 12178 381874535 0 22559
