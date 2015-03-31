@@ -13,7 +13,7 @@ $Data::Dumper::Indent   = 1;
 
 use strict;
 use warnings;
-package Linux::Proc::Net::Snmp;
+package Linux::Proc::Net::Read;
 use Readonly;
 
 Readonly my $PROC_FILENAME => "/proc/net/snmp";
@@ -176,7 +176,7 @@ sub extract_fields {
 1;
 
 package main;
-my $reader = Linux::Proc::Net::Snmp->get_alias;
+my $reader = Linux::Proc::Net::Read->get_alias;
 
 my @field_specs = qw(
 

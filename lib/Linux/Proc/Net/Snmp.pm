@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-package Linux::Proc::Net::Snmp;
+package Linux::Proc::Net::Read;
 use Readonly;
 
 Readonly my $PROC_FILENAME => "/proc/net/snmp";
@@ -169,7 +169,7 @@ __END__
 
 =head1 NAME
 
-Linux::Proc::Net::Snmp reads /proc/net/snmp, and construct perl data
+Linux::Proc::Net::Read reads /proc/net/snmp, and construct perl data
 
 =head1 SYNOPSIS
 

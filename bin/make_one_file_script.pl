@@ -13,7 +13,7 @@ $Data::Dumper::Terse    = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Indent   = 1;
 
-my @lines = Path::Class::file( "lib/Linux/Proc/Net/Snmp.pm" )->slurp( chomp => 1 );
+my @lines = Path::Class::file( "lib/Linux/Proc/Net/Read.pm" )->slurp( chomp => 1 );
 my $index = first_index { $_ eq "__END__" } @lines;
 $#lines = $index - 1
     if $index;
@@ -36,7 +36,7 @@ END_HEADER
 
 my $body = <<'END_BODY';
 package main;
-my $reader = Linux::Proc::Net::Snmp->get_alias;
+my $reader = Linux::Proc::Net::Read->get_alias;
 
 my @field_specs = qw(
 
