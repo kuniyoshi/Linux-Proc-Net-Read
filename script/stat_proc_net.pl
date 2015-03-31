@@ -14,20 +14,25 @@ $Data::Dumper::Indent   = 1;
 use strict;
 use warnings;
 package Linux::Proc::Net::Read;
-use Readonly;
 
-Readonly my $PROC_FILENAME => "/proc/net/snmp";
+# ABSTRACT: reads /proc/net/{netstat,snmp}, and construct perl data structrue
 
 our $VERSION = "0.01";
 
 sub get_alias { shift }
 
 sub read_file {
-    open my $FH, "<", $PROC_FILENAME
-        or die "Could not open a file[$PROC_FILENAME] for read: $!";
+    shift
+        if $_[0] eq __PACKAGE__;
+
+    my $filename = shift;
+
+    open my $FH, "<", $filename
+        or die "Could not open a file[$filename] for read: $!";
     chomp( my @lines = <$FH> );
     close $FH
-        or die "Could not close a file[$PROC_FILENAME]: $!";
+        or die "Could not close a file[$filename]: $!";
+
     return @lines;
 }
 
@@ -98,21 +103,13 @@ sub get_fields {
     return @fields;
 }
 
-sub __clone_array { # only 2 depth.
+sub __clone_array { # only 2 depth.  i do not want to increase dependency modules.
     my $array_ref = shift;
     my @array = @{ $array_ref };
     $_ = [ @{ $_ } ]
         for @array;
     return @array;
 }
-
-# sub __clone_hash { # only 2 depth (id -> heading) clone.  i do not want to increase module dependency.
-#     my $hash_ref = shift;
-#     my %hash = %{ $hash_ref };
-#     $hash{ $_ } = { %{ $hash{ $_ } } }
-#         for keys %hash;
-#     return %hash;
-# }
 
 sub filt_stat {
     shift
