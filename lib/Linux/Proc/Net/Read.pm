@@ -2,6 +2,8 @@ use strict;
 use warnings;
 package Linux::Proc::Net::Read;
 
+# ABSTRACT: reads /proc/net/{netstat,snmp}, and construct perl data structrue
+
 our $VERSION = "0.01";
 
 sub get_alias { shift }
