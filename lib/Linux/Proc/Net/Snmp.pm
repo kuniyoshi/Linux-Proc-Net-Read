@@ -5,6 +5,8 @@ use Readonly;
 
 Readonly my $PROC_FILENAME => "/proc/net/snmp";
 
+our $VERSION = "0.01";
+
 sub get_alias { shift }
 
 sub read_file {
@@ -137,7 +139,7 @@ sub filt_stat {
     $_ = [ grep { defined } @{ $_ } ]
         for @stats;
 
-    return @stats;;
+    return @stats;
 }
 
 sub __flatten {
@@ -152,9 +154,10 @@ sub extract_fields {
 
     my @specs     = @{ shift( ) };
     my $stats_ref = shift;
-    my $index_ref = shift;;
+    my $index_ref = shift;
+    my @stats     = filt_stat( \@specs, $stats_ref, $index_ref );
 
-    return __flatten( $stats_ref );
+    return __flatten( \@stats );
 }
 
 1;
