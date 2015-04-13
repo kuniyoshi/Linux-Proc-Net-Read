@@ -128,8 +128,10 @@ sub filt_stat {
         my $id_index = $index{ $id }{self};
 
         if ( $indicator eq q{-} ) {
-            if ( $sub_id && $stats[ $id ] ) {
+            if ( $sub_id && $stats[ $id_index ] ) {
                 my $index = $index{ $id }{ $sub_id };
+                warn "No [$sub_id] found"
+                    if !defined $index;
                 undef $stats[ $id_index ][ $index ]; # filt later, just mark now.
             }
             else {
@@ -139,6 +141,8 @@ sub filt_stat {
         elsif ( $indicator eq q{+} ) {
             if ( $sub_id ) {
                 my $index = $index{ $id }{ $sub_id };
+                warn "No [$sub_id] found"
+                    if !defined $index;
                 $stats[ $id_index ][ $index ] = $stats_backup[ $id_index ][ $index ];
             }
             else {
@@ -177,7 +181,8 @@ sub extract_fields {
 package main;
 my $reader = Linux::Proc::Net::Read->get_alias;
 
-my @field_specs = qw(
+my @field_specs = $in eq "/proc/net/netstat"
+? qw(
     -IpExt
     -TcpExt
     +TcpExt.DelayedACKLocked
@@ -185,7 +190,6 @@ my @field_specs = qw(
     +TcpExt.TCPFastRetrans
     +TcpExt.TCPForwardRetrans
     +TcpExt.TCPFullUndo
-    +TcpExt.TCPLoss
     +TcpExt.TCPLossFailures
     +TcpExt.TCPLossUndo
     +TcpExt.TCPLostRetransmit
@@ -193,6 +197,40 @@ my @field_specs = qw(
     +TcpExt.TCPSackFailures
     +TcpExt.TCPSackRecoveryFail
     +TcpExt.TCPSlowStartRetrans
+)
+: qw(
+    -Ip
+    +Ip.InDiscards
+    +Ip.ForwDatagrams
+    +Ip.InDelivers
+    +Ip.OutRequests
+    +Ip.ReasmTimeout
+    +Ip.ReasmReqds
+    +Ip.ReasmOKs
+    +Ip.ReasmFails
+
+    -Icmp
+    +Icmp.InMsgs
+    +Icmp.InErrors
+    +Icmp.InDestUnreachs
+    +Icmp.InEchos
+    +Icmp.InEchoReps
+    +Icmp.OutMsgs
+    +Icmp.OutDestUnreachs
+    +Icmp.OutEchos
+    +Icmp.OutEchoReps
+
+    -Tcp.RtoAlgorithm
+    -Tcp.RtoMin
+    -Tcp.RtoMax
+    -Tcp.MaxConn
+
+    -Udp
+    +Udp.InDatagrams
+    +Udp.OutDatagrams
+    +Udp.SndbufErrors
+
+    -UdpLite
 );
 
 $|++;

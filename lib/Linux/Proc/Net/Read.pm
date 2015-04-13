@@ -113,8 +113,10 @@ sub filt_stat {
         my $id_index = $index{ $id }{self};
 
         if ( $indicator eq q{-} ) {
-            if ( $sub_id && $stats[ $id ] ) {
+            if ( $sub_id && $stats[ $id_index ] ) {
                 my $index = $index{ $id }{ $sub_id };
+                warn "No [$sub_id] found"
+                    if !defined $index;
                 undef $stats[ $id_index ][ $index ]; # filt later, just mark now.
             }
             else {
@@ -124,6 +126,8 @@ sub filt_stat {
         elsif ( $indicator eq q{+} ) {
             if ( $sub_id ) {
                 my $index = $index{ $id }{ $sub_id };
+                warn "No [$sub_id] found"
+                    if !defined $index;
                 $stats[ $id_index ][ $index ] = $stats_backup[ $id_index ][ $index ];
             }
             else {
